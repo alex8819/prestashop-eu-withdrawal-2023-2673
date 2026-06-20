@@ -1,13 +1,20 @@
-# EU Withdrawal Button for PrestaShop — Pulsante di Recesso (Directive 2023/2673)
+<p align="center">
+  <img src="assets/banner.png" alt="PsRecessoFacile EU — Pulsante di Recesso (Direttiva UE 2023/2673) per PrestaShop" width="100%">
+</p>
 
-> ⚠️ **BETA (v0.2)** — funzionante e testato, ma in fase beta: provalo in staging e segnala problemi.
+# PsRecessoFacile EU — Pulsante di Recesso (Directive (EU) 2023/2673)
+
+> ⚠️ **BETA (v0.3)** — funzionante e testato, ma in fase beta: provalo in staging e segnala problemi.
 > *Working and tested, but beta: test it on staging and report issues.*
 
-**Free & open-source PrestaShop 8 / 8.2 module** that adds the EU statutory **right-of-withdrawal
-function** ("withdrawal button" / *pulsante di recesso* / *Widerrufsbutton* / *bouton de rétractation* /
-*botón de desistimiento*) required by **Directive (EU) 2023/2673** — **Art. 11a** of the Consumer Rights
-Directive 2011/83/EU; in Italy **Art. 54‑bis del Codice del Consumo (D.Lgs. 209/2025)** — applicable from
-**19 June 2026**.
+🇮🇹 **Il primo modulo PrestaShop open-source per il "pulsante di recesso" UE.** Aggiunge la funzione di
+recesso digitale richiesta dalla **Direttiva (UE) 2023/2673** (**Art. 11a** CRD 2011/83/UE; in Italia
+**Art. 54‑bis del Codice del Consumo**, D.Lgs. 209/2025), **obbligatoria dal 19 giugno 2026**. Gratis,
+leggero, **SEO/cache‑safe**, con motore esenzioni e ricevute verificabili.
+
+🇬🇧 **The first open-source PrestaShop module for the EU "withdrawal button".** It adds the statutory
+right‑of‑withdrawal function required by **Directive (EU) 2023/2673** (Art. 11a / Art. 54‑bis), mandatory
+from **19 June 2026** — free, lightweight, SEO/cache‑safe, with an exemptions engine and verifiable receipts.
 
 [![PrestaShop](https://img.shields.io/badge/PrestaShop-1.7.6%20--%208.2-blue)](https://www.prestashop.com)
 [![License](https://img.shields.io/badge/license-GPL--3.0-green)](LICENSE)

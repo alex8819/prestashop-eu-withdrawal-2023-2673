@@ -158,7 +158,11 @@ class EuWithdrawal extends Module
             return true;
         }
 
-        $parentId = (int) Tab::getIdFromClassName('AdminParentOrders');
+        // Sotto "Servizio clienti" (dove stanno i Resi); fallback Ordini, poi root.
+        $parentId = (int) Tab::getIdFromClassName('AdminParentCustomerThreads');
+        if (!$parentId) {
+            $parentId = (int) Tab::getIdFromClassName('AdminParentOrders');
+        }
 
         $tab = new Tab();
         $tab->class_name = self::ADMIN_CONTROLLER;
