@@ -39,13 +39,25 @@ class EuWithdrawal extends Module
         'es' => 'Confirmar el desistimiento',
     ];
 
+    /**
+     * Model withdrawal form per ISO language (Annex I-B, Directive 2011/83/EU).
+     * Placeholders: %shop% %email% %items% %ordered% %name% %date%
+     */
+    public static $MODEL_FORM = [
+        'it' => "Modulo di recesso tipo (Allegato I-B)\n(compilare e restituire il presente modulo solo se si desidera recedere dal contratto)\n— Destinatario: %shop% (%email%)\n— Con la presente io/noi (*) notifico/notifichiamo (*) il recesso dal mio/nostro (*) contratto di vendita dei seguenti beni (*):\n%items%\n— Ordinato il (*): %ordered%\n— Nome del/dei consumatore(i): %name%\n— Data: %date%\n(*) Cancellare la dicitura inutile.",
+        'en' => "Model withdrawal form (Annex I-B)\n(complete and return this form only if you wish to withdraw from the contract)\n— To: %shop% (%email%)\n— I/We (*) hereby give notice that I/We (*) withdraw from my/our (*) contract of sale of the following goods (*):\n%items%\n— Ordered on (*): %ordered%\n— Name of consumer(s): %name%\n— Date: %date%\n(*) Delete as appropriate.",
+        'fr' => "Formulaire type de rétractation (Annexe I-B)\n(veuillez compléter et renvoyer le présent formulaire uniquement si vous souhaitez vous rétracter du contrat)\n— À l'attention de : %shop% (%email%)\n— Je/Nous (*) vous notifie/notifions (*) par la présente ma/notre (*) rétractation du contrat portant sur la vente des biens suivants (*) :\n%items%\n— Commandé le (*) : %ordered%\n— Nom du/des consommateur(s) : %name%\n— Date : %date%\n(*) Rayez la mention inutile.",
+        'de' => "Muster-Widerrufsformular (Anhang I-B)\n(Wenn Sie den Vertrag widerrufen wollen, dann füllen Sie bitte dieses Formular aus und senden Sie es zurück)\n— An: %shop% (%email%)\n— Hiermit widerrufe(n) ich/wir (*) den von mir/uns (*) abgeschlossenen Vertrag über den Kauf der folgenden Waren (*):\n%items%\n— Bestellt am (*): %ordered%\n— Name des/der Verbraucher(s): %name%\n— Datum: %date%\n(*) Unzutreffendes streichen.",
+        'es' => "Modelo de formulario de desistimiento (Anexo I-B)\n(sólo debe cumplimentar y enviar el presente formulario si desea desistir del contrato)\n— A la atención de: %shop% (%email%)\n— Por la presente le comunico/comunicamos (*) que desisto/desistimos (*) de mi/nuestro (*) contrato de venta de los siguientes bienes (*):\n%items%\n— Pedido el (*): %ordered%\n— Nombre del consumidor(es): %name%\n— Fecha: %date%\n(*) Táchese lo que no proceda.",
+    ];
+
     const ADMIN_CONTROLLER = 'AdminEuWithdrawal';
 
     public function __construct()
     {
         $this->name = 'euwithdrawal';
         $this->tab = 'front_office_features';
-        $this->version = '0.1.0';
+        $this->version = '0.2.0';
         $this->author = 'alex8819';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -89,7 +101,7 @@ class EuWithdrawal extends Module
 
     protected function deleteConfig()
     {
-        foreach (['EUW_ENABLED', 'EUW_PERIOD_DAYS', 'EUW_DATE_SOURCE', 'EUW_ALLOW_GUEST', 'EUW_MERCHANT_EMAIL', 'EUW_ELIGIBLE_STATES'] as $k) {
+        foreach (['EUW_ENABLED', 'EUW_PERIOD_DAYS', 'EUW_DATE_SOURCE', 'EUW_ALLOW_GUEST', 'EUW_MERCHANT_EMAIL', 'EUW_ELIGIBLE_STATES', 'EUW_BUTTON_LABEL'] as $k) {
             Configuration::deleteByName($k);
         }
 
@@ -143,12 +155,39 @@ class EuWithdrawal extends Module
         return max(1, (int) Configuration::get('EUW_PERIOD_DAYS'));
     }
 
-    /** Statutory label for the given language id, with safe fallback. */
+    /** Statutory label for the given language id; admin override wins if set. */
     public function getStatutoryLabel($idLang = null)
     {
-        $iso = strtolower(Language::getIsoById((int) ($idLang ?: $this->context->language->id)) ?: 'en');
+        $idLang = (int) ($idLang ?: $this->context->language->id);
+
+        $override = Configuration::get('EUW_BUTTON_LABEL', $idLang);
+        if ($override !== false && trim((string) $override) !== '') {
+            return $override;
+        }
+
+        $iso = strtolower(Language::getIsoById($idLang) ?: 'en');
 
         return isset(self::$LABELS[$iso]) ? self::$LABELS[$iso] : self::$LABELS['en'];
+    }
+
+    /** Filled Annex I-B model withdrawal form for the given language. */
+    public function getModelForm($idLang, array $params)
+    {
+        $iso = strtolower(Language::getIsoById((int) $idLang) ?: 'en');
+        $tpl = isset(self::$MODEL_FORM[$iso]) ? self::$MODEL_FORM[$iso] : self::$MODEL_FORM['en'];
+
+        return str_replace(
+            ['%shop%', '%email%', '%items%', '%ordered%', '%name%', '%date%'],
+            [
+                $params['shop'] ?? Configuration::get('PS_SHOP_NAME'),
+                $params['email'] ?? Configuration::get('PS_SHOP_EMAIL'),
+                $params['items'] ?? '',
+                $params['ordered'] ?? '',
+                $params['name'] ?? '',
+                $params['date'] ?? date('d/m/Y'),
+            ],
+            $tpl
+        );
     }
 
     /** Statutory "confirm withdrawal" label (Art. 11a §3), with safe fallback. */
@@ -326,6 +365,13 @@ class EuWithdrawal extends Module
             $states = is_array($states) ? implode(',', array_map('intval', $states)) : '';
             Configuration::updateValue('EUW_ELIGIBLE_STATES', $states);
 
+            // Etichetta pulsante personalizzabile (multilingua, override facoltativo)
+            $labels = [];
+            foreach (Language::getLanguages(false) as $lang) {
+                $labels[(int) $lang['id_lang']] = Tools::getValue('EUW_BUTTON_LABEL_' . (int) $lang['id_lang'], '');
+            }
+            Configuration::updateValue('EUW_BUTTON_LABEL', $labels);
+
             $output .= $this->displayConfirmation($this->l('Impostazioni salvate.'));
         }
 
@@ -375,6 +421,11 @@ class EuWithdrawal extends Module
                         'desc' => $this->l('Lascia vuoto per usare l\'email del negozio.'),
                     ],
                     [
+                        'type' => 'text', 'label' => $this->l('Etichetta pulsante (override)'), 'name' => 'EUW_BUTTON_LABEL',
+                        'lang' => true,
+                        'desc' => $this->l('Lascia vuoto per usare la dicitura statutaria per lingua (es. "Recedi dal contratto").'),
+                    ],
+                    [
                         'type' => 'checkbox', 'label' => $this->l('Stati ordine idonei'), 'name' => 'EUW_ELIGIBLE_STATES',
                         'desc' => $this->l('Se non selezioni nulla, vale qualsiasi ordine valido (pagato).'),
                         'values' => [
@@ -395,7 +446,9 @@ class EuWithdrawal extends Module
         $helper->token = Tools::getAdminTokenLite('AdminModules');
         $helper->currentIndex = AdminController::$currentIndex . '&configure=' . $this->name;
         $helper->submit_action = 'submitEuw';
+        $helper->languages = Language::getLanguages(false);
         $helper->default_form_language = (int) $this->context->language->id;
+        $helper->allow_employee_form_lang = (int) Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG');
 
         $values = [
             'EUW_ENABLED' => (int) Configuration::get('EUW_ENABLED'),
@@ -406,6 +459,10 @@ class EuWithdrawal extends Module
         ];
         foreach ($selectedStates as $sid) {
             $values['EUW_ELIGIBLE_STATES_' . $sid] = 1;
+        }
+        $values['EUW_BUTTON_LABEL'] = [];
+        foreach (Language::getLanguages(false) as $lang) {
+            $values['EUW_BUTTON_LABEL'][(int) $lang['id_lang']] = Configuration::get('EUW_BUTTON_LABEL', (int) $lang['id_lang']) ?: '';
         }
         $helper->tpl_vars = ['fields_value' => $values];
 

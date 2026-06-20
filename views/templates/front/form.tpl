@@ -13,7 +13,7 @@
   </p>
   <p class="text-muted">{l s='Puoi esercitare il diritto di recesso senza fornire alcuna motivazione. Riceverai una conferma via email su supporto durevole.' mod='euwithdrawal'}</p>
 
-  <form method="post" action="{$euw_submit_url|escape:'html':'UTF-8'}" id="euw-withdraw-form" class="euw-form">
+  <form method="post" action="{$euw_action_url|escape:'html':'UTF-8'}" id="euw-withdraw-form" class="euw-form">
     <div class="euw-type form-group">
       <label class="euw-radio">
         <input type="radio" name="euw_type" value="full" checked> {l s='Recedo dall’intero ordine' mod='euwithdrawal'}
@@ -36,15 +36,9 @@
       {/foreach}
     </div>
 
-    <div class="euw-ack form-group">
-      <label>
-        <input type="checkbox" name="euw_acknowledge" value="1" required>
-        {l s='Confermo di voler esercitare il diritto di recesso per i beni indicati in questo ordine.' mod='euwithdrawal'}
-      </label>
-    </div>
-
-    <button type="submit" name="euw_confirm" value="1" class="btn btn-primary euw-submit">
-      {if isset($euw_confirm_label)}{$euw_confirm_label|escape:'html':'UTF-8'}{else}{l s='Conferma il recesso' mod='euwithdrawal'}{/if}
+    <p class="text-muted">{l s='Nel passaggio successivo potrai rivedere e confermare la richiesta.' mod='euwithdrawal'}</p>
+    <button type="submit" name="euw_continue" value="1" class="btn btn-primary euw-submit">
+      {l s='Continua' mod='euwithdrawal'}
     </button>
   </form>
 </section>

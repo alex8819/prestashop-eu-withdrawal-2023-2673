@@ -41,6 +41,9 @@ class EuWithdrawalWithdrawalModuleFrontController extends ModuleFrontController
                 case 'lookup':
                     $this->processLookup();
                     break;
+                case 'review':
+                    $this->processReview();
+                    break;
                 case 'submit':
                     $this->processSubmit();
                     break;
@@ -105,10 +108,10 @@ class EuWithdrawalWithdrawalModuleFrontController extends ModuleFrontController
         $this->context->smarty->assign([
             'euw_order_reference' => $order->reference,
             'euw_label' => $this->module->getStatutoryLabel(),
-            'euw_confirm_label' => $this->module->getConfirmLabel(),
             'euw_deadline' => date('d/m/Y', $this->module->getDeadlineTs($order)),
-            'euw_submit_url' => $this->context->link->getModuleLink('euwithdrawal', 'withdrawal', [
-                'action' => 'submit',
+            // Step 1 invia alla pagina di revisione (conferma a 2 step reale)
+            'euw_action_url' => $this->context->link->getModuleLink('euwithdrawal', 'withdrawal', [
+                'action' => 'review',
                 'id_order' => (int) $order->id,
                 'token' => Tools::getValue('token'),
                 'g' => Tools::getValue('g'),
@@ -139,6 +142,79 @@ class EuWithdrawalWithdrawalModuleFrontController extends ModuleFrontController
             $this->fail($this->module->l('Devi confermare la richiesta di recesso.', 'withdrawal'));
         }
 
+        list($type, $items) = $this->getSelectedItems($order);
+
+        $customer = new Customer((int) $order->id_customer);
+        $email = Validate::isLoadedObject($customer) ? $customer->email : '';
+        $firstname = Validate::isLoadedObject($customer) ? $customer->firstname : '';
+        $lastname = Validate::isLoadedObject($customer) ? $customer->lastname : '';
+
+        $declaration = $this->buildDeclaration($order, $firstname, $lastname, $items, $type);
+
+        $wr = new WithdrawalRequest();
+        $wr->id_order = (int) $order->id;
+        $wr->id_customer = (int) $order->id_customer;
+        $wr->order_reference = $order->reference;
+        $wr->customer_firstname = $firstname;
+        $wr->customer_lastname = $lastname;
+        $wr->customer_email = $email;
+        $wr->type = $type;
+        $wr->status = WithdrawalRequest::STATUS_PENDING;
+        $wr->source = $source;
+        $wr->id_lang = (int) $this->context->language->id;
+        $wr->declaration = $declaration;
+        $wr->ip = $this->anonymizeIp(Tools::getRemoteAddr());
+
+        if (!$wr->add()) {
+            $this->fail($this->module->l('Errore durante il salvataggio della richiesta. Riprova.', 'withdrawal'));
+        }
+        $wr->saveItems($items);
+
+        $this->addOrderMessage($order, $declaration);
+        $this->sendEmails($order, $wr, $items);
+
+        Tools::redirect($this->context->link->getModuleLink('euwithdrawal', 'withdrawal', ['action' => 'success']));
+    }
+
+    /* ------------------------------------------------------------------ *
+     *  Step 1.5 — review & confirm (genuine two-step, Art. 11a §3)        *
+     * ------------------------------------------------------------------ */
+
+    protected function processReview()
+    {
+        list($order, $source) = $this->resolveOrder();
+
+        if (!$this->module->isOrderEligible($order)) {
+            $this->fail($this->module->l('Questo ordine non è (più) idoneo al recesso.', 'withdrawal'));
+        }
+
+        list($type, $items) = $this->getSelectedItems($order);
+
+        $customer = new Customer((int) $order->id_customer);
+        $firstname = Validate::isLoadedObject($customer) ? $customer->firstname : '';
+        $lastname = Validate::isLoadedObject($customer) ? $customer->lastname : '';
+
+        $this->context->smarty->assign([
+            'euw_order_reference' => $order->reference,
+            'euw_confirm_label' => $this->module->getConfirmLabel(),
+            'euw_deadline' => date('d/m/Y', $this->module->getDeadlineTs($order)),
+            'euw_type' => $type,
+            'euw_items' => $items,
+            'euw_declaration' => $this->buildDeclaration($order, $firstname, $lastname, $items, $type),
+            'euw_submit_url' => $this->context->link->getModuleLink('euwithdrawal', 'withdrawal', [
+                'action' => 'submit',
+                'id_order' => (int) $order->id,
+                'token' => Tools::getValue('token'),
+                'g' => Tools::getValue('g'),
+            ]),
+            'euw_back_url' => $this->module->getWithdrawalUrl((int) $order->id, ['g' => Tools::getValue('g')]),
+        ]);
+        $this->setTemplate('module:euwithdrawal/views/templates/front/review.tpl');
+    }
+
+    /** Parse euw_type + items from the request into [type, items[]]. */
+    protected function getSelectedItems(Order $order)
+    {
         $type = Tools::getValue('euw_type') === 'partial' ? 'partial' : 'full';
         $products = $order->getProducts();
         $items = [];
@@ -172,36 +248,7 @@ class EuWithdrawalWithdrawalModuleFrontController extends ModuleFrontController
             }
         }
 
-        $customer = new Customer((int) $order->id_customer);
-        $email = Validate::isLoadedObject($customer) ? $customer->email : '';
-        $firstname = Validate::isLoadedObject($customer) ? $customer->firstname : '';
-        $lastname = Validate::isLoadedObject($customer) ? $customer->lastname : '';
-
-        $declaration = $this->buildDeclaration($order, $firstname, $lastname, $items, $type);
-
-        $wr = new WithdrawalRequest();
-        $wr->id_order = (int) $order->id;
-        $wr->id_customer = (int) $order->id_customer;
-        $wr->order_reference = $order->reference;
-        $wr->customer_firstname = $firstname;
-        $wr->customer_lastname = $lastname;
-        $wr->customer_email = $email;
-        $wr->type = $type;
-        $wr->status = WithdrawalRequest::STATUS_PENDING;
-        $wr->source = $source;
-        $wr->id_lang = (int) $this->context->language->id;
-        $wr->declaration = $declaration;
-        $wr->ip = $this->anonymizeIp(Tools::getRemoteAddr());
-
-        if (!$wr->add()) {
-            $this->fail($this->module->l('Errore durante il salvataggio della richiesta. Riprova.', 'withdrawal'));
-        }
-        $wr->saveItems($items);
-
-        $this->addOrderMessage($order, $declaration);
-        $this->sendEmails($order, $wr, $items);
-
-        Tools::redirect($this->context->link->getModuleLink('euwithdrawal', 'withdrawal', ['action' => 'success']));
+        return [$type, $items];
     }
 
     /* ------------------------------------------------------------------ *
@@ -261,11 +308,21 @@ class EuWithdrawalWithdrawalModuleFrontController extends ModuleFrontController
         $tpl = $this->module->l('Con la presente notifico il recesso dal mio contratto di vendita relativo ai seguenti beni (ordine %ref% del %date%):', 'withdrawal');
         $head = str_replace(['%ref%', '%date%'], [$order->reference, Tools::displayDate($order->date_add)], $tpl);
 
-        return $head . "\n" . implode("\n", $lines)
+        $statement = $head . "\n" . implode("\n", $lines)
             . "\n\n" . $this->module->l('Tipo di recesso', 'withdrawal') . ': '
             . ($type === 'partial' ? $this->module->l('parziale', 'withdrawal') : $this->module->l('totale', 'withdrawal'))
             . "\n" . $this->module->l('Cliente', 'withdrawal') . ': ' . trim($firstname . ' ' . $lastname)
             . "\n" . $this->module->l('Data della richiesta', 'withdrawal') . ': ' . date('d/m/Y H:i');
+
+        // Allegato I-B (modulo di recesso tipo) — incluso per conformità Direttiva 2011/83/UE
+        $modelForm = $this->module->getModelForm((int) $this->context->language->id, [
+            'items' => implode("\n", $lines),
+            'ordered' => Tools::displayDate($order->date_add),
+            'name' => trim($firstname . ' ' . $lastname),
+            'date' => date('d/m/Y'),
+        ]);
+
+        return $statement . "\n\n— — — — — — — — — —\n" . $modelForm;
     }
 
     protected function addOrderMessage(Order $order, $declaration)

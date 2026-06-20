@@ -1,8 +1,7 @@
 # EU Withdrawal Button for PrestaShop — Pulsante di Recesso (Directive 2023/2673)
 
-> ⚠️ **BETA 0.1** — primo rilascio pubblico / first public release. Funzionante e testato, ma da
-> considerarsi in fase beta: provalo in staging e segnala problemi. *Working and tested, but beta:
-> test it on staging and report issues.*
+> ⚠️ **BETA (v0.2)** — funzionante e testato, ma in fase beta: provalo in staging e segnala problemi.
+> *Working and tested, but beta: test it on staging and report issues.*
 
 **Free & open-source PrestaShop 8 / 8.2 module** that adds the EU statutory **right-of-withdrawal
 function** ("withdrawal button" / *pulsante di recesso* / *Widerrufsbutton* / *bouton de rétractation* /
@@ -12,7 +11,7 @@ Directive 2011/83/EU; in Italy **Art. 54‑bis del Codice del Consumo (D.Lgs. 20
 
 [![PrestaShop](https://img.shields.io/badge/PrestaShop-1.7.6%20--%208.2-blue)](https://www.prestashop.com)
 [![License](https://img.shields.io/badge/license-GPL--3.0-green)](LICENSE)
-[![Status](https://img.shields.io/badge/status-beta%200.1-orange)]()
+[![Status](https://img.shields.io/badge/status-beta%200.2-orange)]()
 [![EU Directive](https://img.shields.io/badge/EU%20Directive-2023%2F2673-yellow)]()
 
 **Keywords:** prestashop withdrawal button, prestashop 8.2 recesso, modulo recesso prestashop gratis,
@@ -37,8 +36,10 @@ modulo open‑source per PrestaShop** dedicato a questo obbligo.
 - **Pulsante "Recedi dal contratto"** con dicitura statutaria, nel **dettaglio ordine** dell'area cliente.
 - **Recesso totale o parziale** (selezione dei singoli prodotti e quantità).
 - **Supporto ospiti** (guest checkout): pagina di **lookup sicura** con n° ordine + email.
-- **Pagina di conferma** con funzione esplicita **"Conferma il recesso"** (Art. 11a §3), senza dark pattern,
-  **nessuna motivazione richiesta**.
+- **Conferma a due step reale** (dichiarazione → revisione) con funzione esplicita **"Conferma il recesso"**
+  (Art. 11a §3), senza dark pattern, **nessuna motivazione richiesta**.
+- **Modulo Allegato I‑B** (modello di recesso UE) incluso in pagina e nell'email, nelle 5 lingue.
+- **Etichetta del pulsante personalizzabile** per lingua dal pannello (default = dicitura statutaria).
 - **Ricevuta su supporto durevole**: email automatica al cliente con dichiarazione, **data e ora** e dati ordine.
 - **Notifica al negozio** + **nota automatica** nell'ordine (back office).
 - **Finestra di recesso** configurabile (14 giorni; decorrenza da consegna o da data ordine).
@@ -87,8 +88,10 @@ this obligation.
 - **"Withdraw from the contract" button** with statutory wording, on the customer **order detail** page.
 - **Full or partial withdrawal** (select individual products and quantities).
 - **Guest support**: secure **lookup page** (order reference + email).
-- **Confirmation page** with an explicit **"Confirm withdrawal"** function (Art. 11a §3), no dark patterns,
-  **no reason required**.
+- **Genuine two-step confirmation** (declaration → review) with an explicit **"Confirm withdrawal"** function
+  (Art. 11a §3), no dark patterns, **no reason required**.
+- **Annex I‑B model withdrawal form** included on screen and in the email, in 5 languages.
+- **Customisable button label** per language from the panel (statutory wording as default).
 - **Durable‑medium acknowledgement**: automatic email to the customer with the statement, **date & time** and
   order data.
 - **Merchant notification** + **automatic order note** (back office).

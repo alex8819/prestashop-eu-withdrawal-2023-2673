@@ -62,3 +62,30 @@
   font-size: 56px;
   color: #2ecc71;
 }
+
+/* --- Review / confirm step --- */
+.euw-summary,
+.euw-modelform {
+  margin: 16px 0;
+  padding: 14px 16px;
+  border: 1px solid #ececec;
+  border-radius: 8px;
+  background: #fafafa;
+}
+.euw-summary-list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+.euw-decl {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.82rem;
+  background: #fff;
+  border: 1px dashed #d7d7d7;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 6px 0 0;
+}
+.euw-back {
+  margin-left: 8px;
+}
