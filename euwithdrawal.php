@@ -9,7 +9,7 @@
  *
  * @author    alex8819 and contributors
  * @license   GPL-3.0-or-later
- * @version   0.1.0-beta
+ * @version   0.3.1-beta
  * @link      https://github.com/alex8819/prestashop-eu-withdrawal-2023-2673
  */
 
@@ -99,7 +99,7 @@ class EuWithdrawal extends Module
     {
         $this->name = 'euwithdrawal';
         $this->tab = 'front_office_features';
-        $this->version = '0.3.0';
+        $this->version = '0.3.1';
         $this->author = 'alex8819';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -294,6 +294,24 @@ class EuWithdrawal extends Module
         return false;
     }
 
+    /** Order products still withdrawable: not exempt AND not already withdrawn. */
+    public function getWithdrawableProducts(Order $order)
+    {
+        $withdrawn = WithdrawalRequest::getWithdrawnOrderDetailIds((int) $order->id);
+        $out = [];
+        foreach ($order->getProducts() as $p) {
+            if ($this->isProductExempt((int) $p['product_id'])) {
+                continue;
+            }
+            if (in_array((int) $p['id_order_detail'], $withdrawn, true)) {
+                continue;
+            }
+            $out[] = $p;
+        }
+
+        return $out;
+    }
+
     /**
      * Start date of the withdrawal period for an order.
      * 'delivery' = date the order reached a delivered/shipped state (fallback to order date).
@@ -344,13 +362,9 @@ class EuWithdrawal extends Module
             return false;
         }
 
-        // tutti i prodotti esenti (Art. 16/59) -> recesso non applicabile
-        if (!$this->hasNonExemptProducts($order)) {
-            return false;
-        }
-
-        // already a non-rejected FULL withdrawal -> not eligible
-        if (WithdrawalRequest::hasActiveFullRequest((int) $order->id)) {
+        // Idoneo solo se resta almeno un prodotto recedibile
+        // (non esente Art. 16/59 e non già oggetto di un recesso non rifiutato).
+        if (!count($this->getWithdrawableProducts($order))) {
             return false;
         }
 
@@ -431,8 +445,11 @@ class EuWithdrawal extends Module
 
         $eligible = $this->isOrderEligible($order);
         $deadlineTs = $this->getDeadlineTs($order);
-        $alreadyRequested = WithdrawalRequest::hasActiveFullRequest((int) $order->id);
         $allExempt = !$this->hasNonExemptProducts($order);
+        // "Già richiesto" = esiste una richiesta non rifiutata e non resta nulla da recedere.
+        $alreadyRequested = WithdrawalRequest::hasActiveRequest((int) $order->id)
+            && !count($this->getWithdrawableProducts($order))
+            && !$allExempt;
 
         $this->context->smarty->assign([
             'euw_eligible' => $eligible,
@@ -465,9 +482,14 @@ class EuWithdrawal extends Module
             if ($email === '' || Validate::isEmail($email)) {
                 Configuration::updateValue('EUW_MERCHANT_EMAIL', $email);
             }
-            $states = Tools::getValue('EUW_ELIGIBLE_STATES');
-            $states = is_array($states) ? implode(',', array_map('intval', $states)) : '';
-            Configuration::updateValue('EUW_ELIGIBLE_STATES', $states);
+            // HelperForm posta i checkbox come EUW_ELIGIBLE_STATES_<id>: li raccogliamo singolarmente.
+            $states = [];
+            foreach (OrderState::getOrderStates((int) $this->context->language->id) as $s) {
+                if ((int) Tools::getValue('EUW_ELIGIBLE_STATES_' . (int) $s['id_order_state'])) {
+                    $states[] = (int) $s['id_order_state'];
+                }
+            }
+            Configuration::updateValue('EUW_ELIGIBLE_STATES', implode(',', $states));
 
             // Etichetta pulsante personalizzabile (multilingua, override facoltativo)
             $labels = [];
@@ -546,7 +568,7 @@ class EuWithdrawal extends Module
                     ],
                     [
                         'type' => 'text', 'label' => $this->l('Categorie esenti dal recesso (ID)'), 'name' => 'EUW_EXEMPT_CATEGORIES',
-                        'desc' => $this->l('ID delle categorie i cui prodotti sono esclusi dal recesso (Art. 16/59), separati da virgola. Vuoto = nessuna esenzione.'),
+                        'desc' => $this->l('ID delle categorie (foglia) a cui i prodotti sono direttamente associati e che sono escluse dal recesso (Art. 16/59), separati da virgola. Vuoto = nessuna esenzione.'),
                     ],
                     [
                         'type' => 'select', 'label' => $this->l('Motivo esenzione'), 'name' => 'EUW_EXEMPT_REASON',

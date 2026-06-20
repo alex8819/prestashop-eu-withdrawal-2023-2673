@@ -28,7 +28,8 @@
     <pre class="euw-decl">{$euw_declaration|escape:'html':'UTF-8'}</pre>
   </div>
 
-  <form method="post" action="{$euw_submit_url|escape:'html':'UTF-8'}" id="euw-confirm-form" class="euw-form">
+  <form method="post" action="{$euw_submit_url|escape:'html':'UTF-8'}" id="euw-confirm-form" class="euw-form"
+        data-confirm="{l s='Confermi l’invio della richiesta di recesso? L’operazione sarà registrata e riceverai una conferma via email.' mod='euwithdrawal'}">
     <input type="hidden" name="euw_type" value="{$euw_type|escape:'html':'UTF-8'}">
     {foreach from=$euw_items item=it}
       <input type="hidden" name="items[]" value="{$it.id_order_detail|intval}">

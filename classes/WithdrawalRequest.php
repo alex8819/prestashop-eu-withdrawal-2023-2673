@@ -46,7 +46,7 @@ class WithdrawalRequest extends ObjectModel
             'status' => ['type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'size' => 16],
             'source' => ['type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'size' => 16],
             'id_lang' => ['type' => self::TYPE_INT, 'validate' => 'isUnsignedId'],
-            'declaration' => ['type' => self::TYPE_HTML, 'validate' => 'isCleanHtml', 'size' => 4000],
+            'declaration' => ['type' => self::TYPE_HTML, 'validate' => 'isCleanHtml', 'size' => 65535],
             'verification_code' => ['type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'size' => 32],
             'ip' => ['type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'size' => 64],
             'date_add' => ['type' => self::TYPE_DATE, 'validate' => 'isDate'],
@@ -102,12 +102,12 @@ class WithdrawalRequest extends ObjectModel
             && Db::getInstance()->execute('DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'euwithdrawal_request`');
     }
 
-    /** Deterministic, hard-to-guess verification code for an existing request id. */
+    /** Opaque, hard-to-guess verification code (no sequential id exposed). */
     public static function generateVerificationCode($id)
     {
-        $rand = strtoupper(substr(Tools::hash('euwverify' . (int) $id . _COOKIE_KEY_), 0, 6));
+        $h = strtoupper(substr(Tools::hash('euwverify' . (int) $id . _COOKIE_KEY_), 0, 12));
 
-        return 'WD-' . strtoupper(base_convert((string) (int) $id, 10, 36)) . '-' . $rand;
+        return 'WD-' . substr($h, 0, 4) . '-' . substr($h, 4, 4) . '-' . substr($h, 8, 4);
     }
 
     /** Look up a request by its verification code (audit / public verify). */
@@ -137,6 +137,30 @@ class WithdrawalRequest extends ObjectModel
             WHERE id_order = ' . (int) $idOrder . '
               AND type = "full"
               AND status <> "' . pSQL(self::STATUS_REJECTED) . '"');
+    }
+
+    /** True if ANY non-rejected withdrawal request exists for the order. */
+    public static function hasActiveRequest($idOrder)
+    {
+        return (bool) Db::getInstance()->getValue('
+            SELECT 1 FROM `' . _DB_PREFIX_ . 'euwithdrawal_request`
+            WHERE id_order = ' . (int) $idOrder . '
+              AND status <> "' . pSQL(self::STATUS_REJECTED) . '"');
+    }
+
+    /** id_order_detail already covered by a non-rejected request (avoid double withdrawal). */
+    public static function getWithdrawnOrderDetailIds($idOrder)
+    {
+        $rows = Db::getInstance()->executeS('
+            SELECT i.id_order_detail
+            FROM `' . _DB_PREFIX_ . 'euwithdrawal_request_item` i
+            JOIN `' . _DB_PREFIX_ . 'euwithdrawal_request` r ON r.id_withdrawal = i.id_withdrawal
+            WHERE r.id_order = ' . (int) $idOrder . '
+              AND r.status <> "' . pSQL(self::STATUS_REJECTED) . '"');
+
+        return $rows ? array_map(function ($x) {
+            return (int) $x['id_order_detail'];
+        }, $rows) : [];
     }
 
     /** Persist the selected order items for a withdrawal. */

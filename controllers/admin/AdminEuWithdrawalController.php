@@ -137,6 +137,7 @@ class AdminEuWithdrawalController extends ModuleAdminController
                 '{type}' => $wr->type,
                 '{items}' => nl2br(Tools::htmlentitiesUTF8($itemsText)),
                 '{declaration}' => nl2br(Tools::htmlentitiesUTF8($wr->declaration)),
+                '{verification_code}' => $wr->verification_code,
                 '{shop_name}' => Configuration::get('PS_SHOP_NAME'),
             ],
             $wr->customer_email,

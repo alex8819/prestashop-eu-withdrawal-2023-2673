@@ -269,11 +269,15 @@ class EuWithdrawalWithdrawalModuleFrontController extends ModuleFrontController
     {
         $type = Tools::getValue('euw_type') === 'partial' ? 'partial' : 'full';
         $selected = array_map('strval', (array) Tools::getValue('items'));
+        $withdrawn = WithdrawalRequest::getWithdrawnOrderDetailIds((int) $order->id);
         $items = [];
 
         foreach ($order->getProducts() as $p) {
             if ($this->module->isProductExempt((int) $p['product_id'])) {
                 continue; // i beni esenti non sono recedibili
+            }
+            if (in_array((int) $p['id_order_detail'], $withdrawn, true)) {
+                continue; // già oggetto di un recesso precedente
             }
             $idod = (int) $p['id_order_detail'];
 
@@ -337,8 +341,10 @@ class EuWithdrawalWithdrawalModuleFrontController extends ModuleFrontController
 
     protected function assignOrderProducts(Order $order)
     {
+        $withdrawn = WithdrawalRequest::getWithdrawnOrderDetailIds((int) $order->id);
         $eligible = [];
         $exempt = [];
+        $already = [];
         foreach ($order->getProducts() as $p) {
             $row = [
                 'id_order_detail' => (int) $p['id_order_detail'],
@@ -348,6 +354,8 @@ class EuWithdrawalWithdrawalModuleFrontController extends ModuleFrontController
             ];
             if ($this->module->isProductExempt((int) $p['product_id'])) {
                 $exempt[] = $row;
+            } elseif (in_array((int) $p['id_order_detail'], $withdrawn, true)) {
+                $already[] = $row;
             } else {
                 $eligible[] = $row;
             }
@@ -355,6 +363,7 @@ class EuWithdrawalWithdrawalModuleFrontController extends ModuleFrontController
         $this->context->smarty->assign([
             'euw_products' => $eligible,
             'euw_exempt_products' => $exempt,
+            'euw_already_products' => $already,
             'euw_exempt_text' => $exempt ? $this->module->getExemptionText() : '',
         ]);
     }

@@ -4,6 +4,17 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.1-beta] — bug fixes
+### Fixed
+- **Eligible order states were never saved** (HelperForm posts `EUW_ELIGIBLE_STATES_<id>`); now read per-id.
+- **Resend-receipt email** printed a literal `{verification_code}` (missing template variable).
+- **Large declarations** threw a fatal exception (`size` 4000 vs `TEXT`); raised to 65535.
+- **Double withdrawal**: a partial then full request could withdraw the same item twice; items already
+  covered by a non-rejected request are now excluded (eligibility, selection and notes).
+- Stronger, opaque **verification code** (no sequential id exposed).
+- Confirmation **JS dialog** text is now localised (`data-confirm`).
+- Version-string consistency; exemption field help clarified (leaf categories).
+
 ## [0.3.0-beta]
 ### Added (distinctive features)
 - **Exemptions engine (Art. 16 / 59)**: per-category exclusion of products from withdrawal, with a localised
