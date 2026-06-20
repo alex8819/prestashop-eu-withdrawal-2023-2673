@@ -9,7 +9,7 @@
  *
  * @author    alex8819 and contributors
  * @license   GPL-3.0-or-later
- * @version   0.3.1-beta
+ * @version   0.3.2-beta
  * @link      https://github.com/alex8819/prestashop-eu-withdrawal-2023-2673
  */
 
@@ -99,7 +99,7 @@ class EuWithdrawal extends Module
     {
         $this->name = 'euwithdrawal';
         $this->tab = 'front_office_features';
-        $this->version = '0.3.1';
+        $this->version = '0.3.2';
         $this->author = 'alex8819';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -248,16 +248,46 @@ class EuWithdrawal extends Module
 
     /* --------------------- exemptions (Art. 16 / 59) --------------------- */
 
-    /** Configured exempt category ids. */
+    /** Per-request cache of the expanded exempt category set. */
+    protected $exemptExpandedCache = null;
+
+    /** Configured exempt category ids (as entered by the admin). */
     public function getExemptCategoryIds()
     {
         return array_filter(array_map('intval', explode(',', (string) Configuration::get('EUW_EXEMPT_CATEGORIES'))));
     }
 
-    /** True if a product belongs to a configured exempt category. */
+    /**
+     * Configured exempt categories expanded to include all their descendants
+     * (nested set nleft/nright), so a parent category covers its subcategories too.
+     */
+    public function getExemptCategoryIdsExpanded()
+    {
+        if ($this->exemptExpandedCache !== null) {
+            return $this->exemptExpandedCache;
+        }
+        $base = $this->getExemptCategoryIds();
+        if (!$base) {
+            return $this->exemptExpandedCache = [];
+        }
+        $in = implode(',', array_map('intval', $base));
+        $rows = Db::getInstance()->executeS('
+            SELECT DISTINCT c.id_category
+            FROM `' . _DB_PREFIX_ . 'category` c
+            INNER JOIN `' . _DB_PREFIX_ . 'category` p
+                ON c.nleft >= p.nleft AND c.nright <= p.nright
+            WHERE p.id_category IN (' . $in . ')');
+        $ids = $rows ? array_map(function ($r) {
+            return (int) $r['id_category'];
+        }, $rows) : [];
+
+        return $this->exemptExpandedCache = array_values(array_unique(array_merge($ids, $base)));
+    }
+
+    /** True if a product belongs to an exempt category (or a subcategory of one). */
     public function isProductExempt($idProduct)
     {
-        $exempt = $this->getExemptCategoryIds();
+        $exempt = $this->getExemptCategoryIdsExpanded();
         if (!$exempt) {
             return false;
         }
@@ -568,7 +598,7 @@ class EuWithdrawal extends Module
                     ],
                     [
                         'type' => 'text', 'label' => $this->l('Categorie esenti dal recesso (ID)'), 'name' => 'EUW_EXEMPT_CATEGORIES',
-                        'desc' => $this->l('ID delle categorie (foglia) a cui i prodotti sono direttamente associati e che sono escluse dal recesso (Art. 16/59), separati da virgola. Vuoto = nessuna esenzione.'),
+                        'desc' => $this->l('ID delle categorie escluse dal recesso (Art. 16/59); vale anche per le sottocategorie. Separati da virgola. Vuoto = nessuna esenzione.'),
                     ],
                     [
                         'type' => 'select', 'label' => $this->l('Motivo esenzione'), 'name' => 'EUW_EXEMPT_REASON',

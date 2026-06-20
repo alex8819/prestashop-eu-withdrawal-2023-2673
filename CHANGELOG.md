@@ -4,6 +4,19 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.2-beta]
+### Improved
+- Exemptions now also cover **subcategories** (nested-set expansion), not only the exact category entered.
+### Fixed
+- Guest lookup resolves the order by **reference + email** — PrestaShop references are not unique
+  (split/multishop orders share one), so the correct order is now reached.
+- Best-effort **concurrency guard** against double withdrawal on simultaneous submits.
+### Security
+- Full re-audit of the guest (non-logged-in) flow: **no cross-account access** — an attacker cannot act on
+  another order without its email; capability tokens are keyed by the shop secret and unforgeable; the
+  `euw_guest` cookie is encrypted/signed and re-validated against the DB; the state-changing submit is
+  POST-only and always re-checked server-side.
+
 ## [0.3.1-beta] — bug fixes
 ### Fixed
 - **Eligible order states were never saved** (HelperForm posts `EUW_ELIGIBLE_STATES_<id>`); now read per-id.

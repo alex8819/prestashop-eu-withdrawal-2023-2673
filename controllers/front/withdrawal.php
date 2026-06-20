@@ -82,8 +82,8 @@ class EuWithdrawalWithdrawalModuleFrontController extends ModuleFrontController
             $reference = trim(Tools::getValue('reference'));
             $email = trim(Tools::getValue('email'));
 
-            $order = $this->findOrderByReference($reference);
-            if ($order && $this->orderEmailMatches($order, $email)) {
+            $order = $this->findOrderByReferenceAndEmail($reference, $email);
+            if ($order) {
                 $this->rememberGuest((int) $order->id, $email);
                 Tools::redirect($this->module->getWithdrawalUrl((int) $order->id, ['g' => $this->guestToken((int) $order->id, $email)]));
             } else {
@@ -188,6 +188,15 @@ class EuWithdrawalWithdrawalModuleFrontController extends ModuleFrontController
         }
 
         list($type, $items) = $this->getSelectedItems($order);
+
+        // Guardia concorrenza: riescludi eventuali articoli recessi nel frattempo.
+        $freshWithdrawn = WithdrawalRequest::getWithdrawnOrderDetailIds((int) $order->id);
+        $items = array_values(array_filter($items, function ($it) use ($freshWithdrawn) {
+            return !in_array((int) $it['id_order_detail'], $freshWithdrawn, true);
+        }));
+        if (!$items) {
+            $this->fail($this->module->l('I prodotti selezionati risultano già oggetto di recesso.', 'withdrawal'));
+        }
 
         $customer = new Customer((int) $order->id_customer);
         $email = Validate::isLoadedObject($customer) ? $customer->email : '';
@@ -466,21 +475,31 @@ class EuWithdrawalWithdrawalModuleFrontController extends ModuleFrontController
 
     /* --------------------------- guest utils --------------------------- */
 
-    protected function findOrderByReference($reference)
+    /**
+     * Find the order matching reference AND email. References are NOT unique in
+     * PrestaShop (split/multishop orders share one), so we scan all of them and
+     * return the most recent whose customer email matches.
+     */
+    protected function findOrderByReferenceAndEmail($reference, $email)
     {
         $reference = pSQL(trim($reference));
-        if ($reference === '') {
+        if ($reference === '' || !Validate::isEmail(trim($email))) {
             return null;
         }
-        $id = (int) Db::getInstance()->getValue('
+        $rows = Db::getInstance()->executeS('
             SELECT id_order FROM `' . _DB_PREFIX_ . 'orders`
             WHERE reference = "' . $reference . '" ORDER BY id_order DESC');
-        if (!$id) {
+        if (!$rows) {
             return null;
         }
-        $order = new Order($id);
+        foreach ($rows as $row) {
+            $order = new Order((int) $row['id_order']);
+            if (Validate::isLoadedObject($order) && $this->orderEmailMatches($order, $email)) {
+                return $order;
+            }
+        }
 
-        return Validate::isLoadedObject($order) ? $order : null;
+        return null;
     }
 
     protected function orderEmailMatches(Order $order, $email)
