@@ -53,18 +53,60 @@ class EuWithdrawal extends Module
 
     const ADMIN_CONTROLLER = 'AdminEuWithdrawal';
 
+    /**
+     * Statutory withdrawal exemptions (Art. 16 CRD 2011/83/EU / Art. 59 Codice del Consumo)
+     * keyed by reason, then ISO language. Shown when withdrawal does not apply.
+     */
+    public static $EXEMPTIONS = [
+        'custom' => [
+            'it' => 'Beni confezionati su misura o chiaramente personalizzati.',
+            'en' => 'Goods made to the consumer\'s specifications or clearly personalised.',
+            'fr' => 'Biens confectionnés selon les spécifications du consommateur ou nettement personnalisés.',
+            'de' => 'Waren, die nach Kundenspezifikation angefertigt oder eindeutig personalisiert wurden.',
+            'es' => 'Bienes confeccionados conforme a las especificaciones del consumidor o claramente personalizados.',
+        ],
+        'hygiene' => [
+            'it' => 'Beni sigillati non idonei alla restituzione per motivi igienici o di salute, aperti dopo la consegna.',
+            'en' => 'Sealed goods unsuitable for return for health/hygiene reasons, unsealed after delivery.',
+            'fr' => 'Biens scellés ne pouvant être renvoyés pour des raisons d\'hygiène ou de santé, descellés après la livraison.',
+            'de' => 'Versiegelte Waren, die aus Gründen des Gesundheitsschutzes/der Hygiene nicht zur Rückgabe geeignet sind und nach der Lieferung entsiegelt wurden.',
+            'es' => 'Bienes precintados no aptos para devolución por razones de higiene o salud, desprecintados tras la entrega.',
+        ],
+        'perishable' => [
+            'it' => 'Beni che rischiano di deteriorarsi o scadere rapidamente.',
+            'en' => 'Goods liable to deteriorate or expire rapidly.',
+            'fr' => 'Biens susceptibles de se détériorer ou de se périmer rapidement.',
+            'de' => 'Waren, die schnell verderben können oder deren Verfallsdatum schnell überschritten würde.',
+            'es' => 'Bienes que puedan deteriorarse o caducar con rapidez.',
+        ],
+        'sealed_media' => [
+            'it' => 'Registrazioni audio/video o software informatici sigillati e aperti dopo la consegna.',
+            'en' => 'Sealed audio/video recordings or computer software, unsealed after delivery.',
+            'fr' => 'Enregistrements audio/vidéo ou logiciels informatiques scellés, descellés après la livraison.',
+            'de' => 'Versiegelte Ton-/Videoaufnahmen oder Computersoftware, die nach der Lieferung entsiegelt wurden.',
+            'es' => 'Grabaciones de audio/vídeo o programas informáticos precintados, desprecintados tras la entrega.',
+        ],
+        'digital' => [
+            'it' => 'Contenuto digitale non su supporto materiale, la cui esecuzione è iniziata con il consenso e la rinuncia al recesso.',
+            'en' => 'Digital content not on a tangible medium, where performance began with consent and waiver of withdrawal.',
+            'fr' => 'Contenu numérique non fourni sur support matériel, dont l\'exécution a commencé avec accord et renonciation à la rétractation.',
+            'de' => 'Digitale Inhalte nicht auf einem körperlichen Datenträger, deren Ausführung mit Zustimmung und Verzicht auf das Widerrufsrecht begonnen hat.',
+            'es' => 'Contenido digital no prestado en soporte material, cuya ejecución comenzó con consentimiento y renuncia al desistimiento.',
+        ],
+    ];
+
     public function __construct()
     {
         $this->name = 'euwithdrawal';
         $this->tab = 'front_office_features';
-        $this->version = '0.2.0';
+        $this->version = '0.3.0';
         $this->author = 'alex8819';
         $this->need_instance = 0;
         $this->bootstrap = true;
 
         parent::__construct();
 
-        $this->displayName = $this->l('EU Withdrawal Button (Directive 2023/2673) — Pulsante di Recesso');
+        $this->displayName = $this->l('PsRecessoFacile EU — Pulsante di Recesso (Direttiva 2023/2673)');
         $this->description = $this->l('Aggiunge la funzione di recesso digitale conforme alla Direttiva UE 2023/2673 (Art. 54-bis Codice del Consumo / Art. 11a CRD): pulsante in area cliente e per ospiti, flusso a due step, ricevuta su supporto durevole, gestione in backoffice.');
         $this->confirmUninstall = $this->l('Sicuro di voler disinstallare? Le richieste di recesso registrate verranno eliminate.');
         $this->ps_versions_compliancy = ['min' => '1.7.6.0', 'max' => _PS_VERSION_];
@@ -96,12 +138,14 @@ class EuWithdrawal extends Module
             && Configuration::updateValue('EUW_DATE_SOURCE', 'delivery')
             && Configuration::updateValue('EUW_ALLOW_GUEST', 1)
             && Configuration::updateValue('EUW_MERCHANT_EMAIL', Configuration::get('PS_SHOP_EMAIL'))
-            && Configuration::updateValue('EUW_ELIGIBLE_STATES', '');
+            && Configuration::updateValue('EUW_ELIGIBLE_STATES', '')
+            && Configuration::updateValue('EUW_EXEMPT_CATEGORIES', '')
+            && Configuration::updateValue('EUW_EXEMPT_REASON', 'custom');
     }
 
     protected function deleteConfig()
     {
-        foreach (['EUW_ENABLED', 'EUW_PERIOD_DAYS', 'EUW_DATE_SOURCE', 'EUW_ALLOW_GUEST', 'EUW_MERCHANT_EMAIL', 'EUW_ELIGIBLE_STATES', 'EUW_BUTTON_LABEL'] as $k) {
+        foreach (['EUW_ENABLED', 'EUW_PERIOD_DAYS', 'EUW_DATE_SOURCE', 'EUW_ALLOW_GUEST', 'EUW_MERCHANT_EMAIL', 'EUW_ELIGIBLE_STATES', 'EUW_BUTTON_LABEL', 'EUW_EXEMPT_CATEGORIES', 'EUW_EXEMPT_REASON'] as $k) {
             Configuration::deleteByName($k);
         }
 
@@ -198,6 +242,54 @@ class EuWithdrawal extends Module
         return isset(self::$CONFIRM_LABELS[$iso]) ? self::$CONFIRM_LABELS[$iso] : self::$CONFIRM_LABELS['en'];
     }
 
+    /* --------------------- exemptions (Art. 16 / 59) --------------------- */
+
+    /** Configured exempt category ids. */
+    public function getExemptCategoryIds()
+    {
+        return array_filter(array_map('intval', explode(',', (string) Configuration::get('EUW_EXEMPT_CATEGORIES'))));
+    }
+
+    /** True if a product belongs to a configured exempt category. */
+    public function isProductExempt($idProduct)
+    {
+        $exempt = $this->getExemptCategoryIds();
+        if (!$exempt) {
+            return false;
+        }
+        $cats = Product::getProductCategories((int) $idProduct);
+
+        return (bool) array_intersect($exempt, array_map('intval', $cats));
+    }
+
+    /** Localised text of the configured exemption reason. */
+    public function getExemptionText($idLang = null)
+    {
+        $reason = (string) Configuration::get('EUW_EXEMPT_REASON') ?: 'custom';
+        if (!isset(self::$EXEMPTIONS[$reason])) {
+            return '';
+        }
+        $iso = strtolower(Language::getIsoById((int) ($idLang ?: $this->context->language->id)) ?: 'en');
+        $set = self::$EXEMPTIONS[$reason];
+
+        return isset($set[$iso]) ? $set[$iso] : $set['en'];
+    }
+
+    /** Whether the order contains at least one product NOT exempt from withdrawal. */
+    public function hasNonExemptProducts(Order $order)
+    {
+        if (!$this->getExemptCategoryIds()) {
+            return true;
+        }
+        foreach ($order->getProducts() as $p) {
+            if (!$this->isProductExempt((int) $p['product_id'])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * Start date of the withdrawal period for an order.
      * 'delivery' = date the order reached a delivered/shipped state (fallback to order date).
@@ -245,6 +337,11 @@ class EuWithdrawal extends Module
         }
 
         if (time() > $this->getDeadlineTs($order)) {
+            return false;
+        }
+
+        // tutti i prodotti esenti (Art. 16/59) -> recesso non applicabile
+        if (!$this->hasNonExemptProducts($order)) {
             return false;
         }
 
@@ -331,11 +428,14 @@ class EuWithdrawal extends Module
         $eligible = $this->isOrderEligible($order);
         $deadlineTs = $this->getDeadlineTs($order);
         $alreadyRequested = WithdrawalRequest::hasActiveFullRequest((int) $order->id);
+        $allExempt = !$this->hasNonExemptProducts($order);
 
         $this->context->smarty->assign([
             'euw_eligible' => $eligible,
             'euw_already' => $alreadyRequested,
             'euw_expired' => (time() > $deadlineTs),
+            'euw_exempt' => $allExempt,
+            'euw_exempt_text' => $allExempt ? $this->getExemptionText() : '',
             'euw_deadline' => date('d/m/Y', $deadlineTs),
             'euw_label' => $this->getStatutoryLabel(),
             'euw_url' => $this->getWithdrawalUrl((int) $order->id),
@@ -372,6 +472,15 @@ class EuWithdrawal extends Module
             }
             Configuration::updateValue('EUW_BUTTON_LABEL', $labels);
 
+            // Esenzioni (Art. 16/59)
+            $exempt = Tools::getValue('EUW_EXEMPT_CATEGORIES');
+            $exempt = is_array($exempt)
+                ? implode(',', array_map('intval', $exempt))
+                : implode(',', array_filter(array_map('intval', explode(',', (string) $exempt))));
+            Configuration::updateValue('EUW_EXEMPT_CATEGORIES', $exempt);
+            $reason = Tools::getValue('EUW_EXEMPT_REASON');
+            Configuration::updateValue('EUW_EXEMPT_REASON', array_key_exists($reason, self::$EXEMPTIONS) ? $reason : 'custom');
+
             $output .= $this->displayConfirmation($this->l('Impostazioni salvate.'));
         }
 
@@ -385,6 +494,12 @@ class EuWithdrawal extends Module
             $stateOptions[] = ['id_state' => (int) $s['id_order_state'], 'name' => $s['name']];
         }
         $selectedStates = array_filter(array_map('intval', explode(',', (string) Configuration::get('EUW_ELIGIBLE_STATES'))));
+
+        $iso = strtolower(Language::getIsoById((int) $this->context->language->id) ?: 'en');
+        $reasonOptions = [];
+        foreach (self::$EXEMPTIONS as $key => $set) {
+            $reasonOptions[] = ['id' => $key, 'name' => isset($set[$iso]) ? $set[$iso] : $set['en']];
+        }
 
         $fields_form = [
             'form' => [
@@ -426,6 +541,15 @@ class EuWithdrawal extends Module
                         'desc' => $this->l('Lascia vuoto per usare la dicitura statutaria per lingua (es. "Recedi dal contratto").'),
                     ],
                     [
+                        'type' => 'text', 'label' => $this->l('Categorie esenti dal recesso (ID)'), 'name' => 'EUW_EXEMPT_CATEGORIES',
+                        'desc' => $this->l('ID delle categorie i cui prodotti sono esclusi dal recesso (Art. 16/59), separati da virgola. Vuoto = nessuna esenzione.'),
+                    ],
+                    [
+                        'type' => 'select', 'label' => $this->l('Motivo esenzione'), 'name' => 'EUW_EXEMPT_REASON',
+                        'options' => ['query' => $reasonOptions, 'id' => 'id', 'name' => 'name'],
+                        'desc' => $this->l('Testo legale mostrato al cliente quando il recesso non si applica.'),
+                    ],
+                    [
                         'type' => 'checkbox', 'label' => $this->l('Stati ordine idonei'), 'name' => 'EUW_ELIGIBLE_STATES',
                         'desc' => $this->l('Se non selezioni nulla, vale qualsiasi ordine valido (pagato).'),
                         'values' => [
@@ -456,6 +580,8 @@ class EuWithdrawal extends Module
             'EUW_DATE_SOURCE' => Configuration::get('EUW_DATE_SOURCE'),
             'EUW_ALLOW_GUEST' => (int) Configuration::get('EUW_ALLOW_GUEST'),
             'EUW_MERCHANT_EMAIL' => Configuration::get('EUW_MERCHANT_EMAIL'),
+            'EUW_EXEMPT_CATEGORIES' => Configuration::get('EUW_EXEMPT_CATEGORIES'),
+            'EUW_EXEMPT_REASON' => Configuration::get('EUW_EXEMPT_REASON') ?: 'custom',
         ];
         foreach ($selectedStates as $sid) {
             $values['EUW_ELIGIBLE_STATES_' . $sid] = 1;

@@ -21,7 +21,8 @@ class WithdrawalRequest extends ObjectModel
     public $status;        // pending | processed | rejected | refunded
     public $source;        // account | guest
     public $id_lang;
-    public $declaration;   // testo dichiarazione (supporto durevole)
+    public $declaration;       // testo dichiarazione (supporto durevole)
+    public $verification_code; // codice verifica ricevuta (registro auditabile)
     public $ip;
     public $date_add;
     public $date_upd;
@@ -46,6 +47,7 @@ class WithdrawalRequest extends ObjectModel
             'source' => ['type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'size' => 16],
             'id_lang' => ['type' => self::TYPE_INT, 'validate' => 'isUnsignedId'],
             'declaration' => ['type' => self::TYPE_HTML, 'validate' => 'isCleanHtml', 'size' => 4000],
+            'verification_code' => ['type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'size' => 32],
             'ip' => ['type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'size' => 64],
             'date_add' => ['type' => self::TYPE_DATE, 'validate' => 'isDate'],
             'date_upd' => ['type' => self::TYPE_DATE, 'validate' => 'isDate'],
@@ -69,13 +71,15 @@ class WithdrawalRequest extends ObjectModel
             `source` VARCHAR(16) NOT NULL DEFAULT "account",
             `id_lang` INT UNSIGNED NOT NULL DEFAULT 0,
             `declaration` TEXT,
+            `verification_code` VARCHAR(32) NOT NULL DEFAULT "",
             `ip` VARCHAR(64) NOT NULL DEFAULT "",
             `date_add` DATETIME NOT NULL,
             `date_upd` DATETIME NOT NULL,
             PRIMARY KEY (`id_withdrawal`),
             KEY `id_order` (`id_order`),
             KEY `id_customer` (`id_customer`),
-            KEY `status` (`status`)
+            KEY `status` (`status`),
+            KEY `verification_code` (`verification_code`)
         ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4;';
 
         $sql2 = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'euwithdrawal_request_item` (
@@ -96,6 +100,33 @@ class WithdrawalRequest extends ObjectModel
     {
         return Db::getInstance()->execute('DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'euwithdrawal_request_item`')
             && Db::getInstance()->execute('DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'euwithdrawal_request`');
+    }
+
+    /** Deterministic, hard-to-guess verification code for an existing request id. */
+    public static function generateVerificationCode($id)
+    {
+        $rand = strtoupper(substr(Tools::hash('euwverify' . (int) $id . _COOKIE_KEY_), 0, 6));
+
+        return 'WD-' . strtoupper(base_convert((string) (int) $id, 10, 36)) . '-' . $rand;
+    }
+
+    /** Look up a request by its verification code (audit / public verify). */
+    public static function findByCode($code)
+    {
+        $code = pSQL(trim((string) $code));
+        if ($code === '') {
+            return null;
+        }
+        $id = (int) Db::getInstance()->getValue('
+            SELECT id_withdrawal FROM `' . _DB_PREFIX_ . 'euwithdrawal_request`
+            WHERE verification_code = "' . $code . '"');
+
+        if (!$id) {
+            return null;
+        }
+        $wr = new self($id);
+
+        return Validate::isLoadedObject($wr) ? $wr : null;
     }
 
     /** True if a non-rejected FULL withdrawal already exists for the order. */

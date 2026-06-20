@@ -29,6 +29,7 @@ class AdminEuWithdrawalController extends ModuleAdminController
 
         $this->fields_list = [
             'id_withdrawal' => ['title' => $this->l('ID'), 'align' => 'center', 'class' => 'fixed-width-xs'],
+            'verification_code' => ['title' => $this->l('Codice verifica'), 'class' => 'fixed-width-sm'],
             'order_reference' => ['title' => $this->l('Ordine')],
             'customer' => ['title' => $this->l('Cliente'), 'havingFilter' => true],
             'customer_email' => ['title' => $this->l('Email')],
@@ -183,6 +184,7 @@ class AdminEuWithdrawalController extends ModuleAdminController
         $h .= '<div class="panel-heading"><i class="icon-gavel"></i> ' . $this->l('Richiesta di recesso') . ' #' . (int) $wr->id . ' — ' . $this->renderStatus($wr->status) . '</div>';
         $h .= '<div class="row"><div class="col-lg-6">';
         $h .= '<table class="table"><tbody>';
+        $h .= '<tr><th>' . $this->l('Codice verifica') . '</th><td><code>' . htmlspecialchars($wr->verification_code) . '</code></td></tr>';
         $h .= '<tr><th>' . $this->l('Ordine') . '</th><td><a href="' . htmlspecialchars($orderUrl) . '">' . htmlspecialchars($wr->order_reference) . '</a></td></tr>';
         $h .= '<tr><th>' . $this->l('Cliente') . '</th><td>' . htmlspecialchars(trim($wr->customer_firstname . ' ' . $wr->customer_lastname)) . '</td></tr>';
         $h .= '<tr><th>' . $this->l('Email') . '</th><td>' . htmlspecialchars($wr->customer_email) . '</td></tr>';

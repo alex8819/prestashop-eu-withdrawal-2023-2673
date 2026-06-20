@@ -14,5 +14,7 @@ Declaración de desistimiento:
 
 El reembolso se realizará en un plazo de 14 días desde la comunicación del desistimiento, de conformidad con la Directiva (UE) 2023/2673 (Art. 11a de la Directiva sobre derechos de los consumidores).
 
+Código de verificación del justificante: {verification_code}
+
 Gracias,
 {shop_name}

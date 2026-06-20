@@ -11,7 +11,7 @@ Directive 2011/83/EU; in Italy **Art. 54‑bis del Codice del Consumo (D.Lgs. 20
 
 [![PrestaShop](https://img.shields.io/badge/PrestaShop-1.7.6%20--%208.2-blue)](https://www.prestashop.com)
 [![License](https://img.shields.io/badge/license-GPL--3.0-green)](LICENSE)
-[![Status](https://img.shields.io/badge/status-beta%200.2-orange)]()
+[![Status](https://img.shields.io/badge/status-beta%200.3-orange)]()
 [![EU Directive](https://img.shields.io/badge/EU%20Directive-2023%2F2673-yellow)]()
 
 **Keywords:** prestashop withdrawal button, prestashop 8.2 recesso, modulo recesso prestashop gratis,
@@ -21,6 +21,18 @@ Widerrufsbutton PrestaShop, bouton de rétractation, botón de desistimiento, fr
 > 🛈 **Disclaimer / Avvertenza:** This module is a technical aid to compliance, **not legal advice**.
 > Have your implementation reviewed by your legal advisor. — Questo modulo è uno strumento tecnico di
 > ausilio alla conformità, **non costituisce consulenza legale**. Fai validare l'implementazione dal tuo legale.
+
+---
+
+## ✨ Cosa ci distingue / What sets us apart
+A differenza degli altri moduli (anche a pagamento), oltre al pulsante offriamo:
+*Beyond the button, unlike other (even paid) modules we offer:*
+- 🧾 **Motore esenzioni (Art. 16/59)** — il recesso **non** viene proposto dove non si applica (beni su misura,
+  sigillati per igiene, deperibili, digitale fruito), con nota legale. *Exemptions engine — withdrawal isn't
+  offered where it legally doesn't apply.*
+- 🔐 **Registro verificabile** — ogni ricevuta ha un **codice di verifica** e una **pagina pubblica di verifica**
+  (privacy‑safe) + export CSV per audit. *Verifiable audit register with public receipt verification.*
+- 🆓 **Open‑source su GitHub** (GPL‑3.0), ispezionabile e migliorabile dalla community.
 
 ---
 

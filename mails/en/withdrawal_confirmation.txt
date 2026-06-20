@@ -14,5 +14,7 @@ Withdrawal declaration:
 
 The refund will be issued within 14 days of the withdrawal notice, pursuant to Directive (EU) 2023/2673 (Art. 11a Consumer Rights Directive).
 
+Receipt verification code: {verification_code}
+
 Thank you,
 {shop_name}

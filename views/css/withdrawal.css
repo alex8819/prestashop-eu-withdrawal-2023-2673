@@ -89,3 +89,49 @@
 .euw-back {
   margin-left: 8px;
 }
+
+/* --- Verification code / audit --- */
+.euw-code-box {
+  margin: 18px auto;
+  max-width: 420px;
+  padding: 16px;
+  border: 1px dashed #b9c6da;
+  border-radius: 10px;
+  background: #f7faff;
+}
+.euw-code-label {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+.euw-code {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-family: monospace;
+  color: #2b3a55;
+}
+.euw-verify-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 0.82rem;
+}
+.euw-verify-result ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+/* --- Exemptions (Art. 16/59) --- */
+.euw-exempt-note,
+.euw-exempt {
+  margin: 12px 0;
+  padding: 10px 12px;
+  background: #fff8e6;
+  border: 1px solid #ffe2a8;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+.euw-exempt-note ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}

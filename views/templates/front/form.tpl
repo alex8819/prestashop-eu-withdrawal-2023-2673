@@ -36,6 +36,19 @@
       {/foreach}
     </div>
 
+    {if $euw_exempt_products}
+      <div class="euw-exempt-note">
+        <p class="text-muted">
+          {l s='I seguenti beni sono esclusi dal diritto di recesso' mod='euwithdrawal'}{if $euw_exempt_text} — {$euw_exempt_text|escape:'html':'UTF-8'}{/if}:
+        </p>
+        <ul>
+          {foreach from=$euw_exempt_products item=ep}
+            <li>{$ep.name|escape:'html':'UTF-8'}</li>
+          {/foreach}
+        </ul>
+      </div>
+    {/if}
+
     <p class="text-muted">{l s='Nel passaggio successivo potrai rivedere e confermare la richiesta.' mod='euwithdrawal'}</p>
     <button type="submit" name="euw_continue" value="1" class="btn btn-primary euw-submit">
       {l s='Continua' mod='euwithdrawal'}

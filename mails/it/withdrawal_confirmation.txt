@@ -14,5 +14,7 @@ Dichiarazione di recesso:
 
 Il rimborso sarà effettuato entro 14 giorni dalla comunicazione del recesso, ai sensi della Direttiva UE 2023/2673 (Art. 54-bis Codice del Consumo).
 
+Codice di verifica della ricevuta: {verification_code}
+
 Grazie,
 {shop_name}

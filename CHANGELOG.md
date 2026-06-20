@@ -4,6 +4,17 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.0-beta]
+### Added (distinctive features)
+- **Exemptions engine (Art. 16 / 59)**: per-category exclusion of products from withdrawal, with a localised
+  legal reason shown to the customer; exempt items are non-selectable and the button hides when all items are exempt.
+- **Verifiable audit register**: each acknowledgement gets a unique **verification code**; a public
+  **receipt verification page** (`noindex`, privacy-safe) lets anyone check authenticity; code shown in the
+  email, on the success page and in the back office; CSV export of the register.
+### Changed
+- Back-office display name: **PsRecessoFacile EU**.
+- DB upgrade `0.3.0` adds the `verification_code` column to existing installs.
+
 ## [0.2.0-beta]
 ### Added
 - Genuine **two-step confirmation** (declaration → review & confirm) — reinforces Art. 11a §3, no dark patterns.

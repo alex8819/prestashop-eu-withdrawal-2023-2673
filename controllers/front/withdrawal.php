@@ -47,7 +47,14 @@ class EuWithdrawalWithdrawalModuleFrontController extends ModuleFrontController
                 case 'submit':
                     $this->processSubmit();
                     break;
+                case 'verify':
+                    $this->processVerify();
+                    break;
                 case 'success':
+                    $this->context->smarty->assign([
+                        'euw_code' => Tools::getValue('code', ''),
+                        'euw_verify_url' => $this->context->link->getModuleLink('euwithdrawal', 'withdrawal', ['action' => 'verify']),
+                    ]);
                     $this->setTemplate('module:euwithdrawal/views/templates/front/success.tpl');
                     break;
                 case 'form':
@@ -90,6 +97,44 @@ class EuWithdrawalWithdrawalModuleFrontController extends ModuleFrontController
             'euw_reference' => Tools::getValue('reference', ''),
         ]);
         $this->setTemplate('module:euwithdrawal/views/templates/front/guest-lookup.tpl');
+    }
+
+    /* ------------------------------------------------------------------ *
+     *  Public verification of a withdrawal receipt (audit)               *
+     * ------------------------------------------------------------------ */
+
+    protected function processVerify()
+    {
+        $result = null;
+        $error = '';
+
+        if (Tools::isSubmit('euw_verify')) {
+            $wr = WithdrawalRequest::findByCode(Tools::getValue('code'));
+            if ($wr) {
+                // Privacy: nessun dato personale, solo prova di esistenza/stato.
+                $ref = (string) $wr->order_reference;
+                $masked = Tools::strlen($ref) > 4
+                    ? Tools::substr($ref, 0, 2) . str_repeat('•', max(1, Tools::strlen($ref) - 4)) . Tools::substr($ref, -2)
+                    : '••••';
+                $result = [
+                    'code' => $wr->verification_code,
+                    'date' => Tools::displayDate($wr->date_add),
+                    'status' => $wr->status,
+                    'type' => $wr->type,
+                    'order_masked' => $masked,
+                ];
+            } else {
+                $error = $this->module->l('Codice non valido o richiesta non trovata.', 'withdrawal');
+            }
+        }
+
+        $this->context->smarty->assign([
+            'euw_action_url' => $this->context->link->getModuleLink('euwithdrawal', 'withdrawal', ['action' => 'verify']),
+            'euw_code' => Tools::getValue('code', ''),
+            'euw_result' => $result,
+            'euw_error' => $error,
+        ]);
+        $this->setTemplate('module:euwithdrawal/views/templates/front/verify.tpl');
     }
 
     /* ------------------------------------------------------------------ *
@@ -170,10 +215,17 @@ class EuWithdrawalWithdrawalModuleFrontController extends ModuleFrontController
         }
         $wr->saveItems($items);
 
+        // Codice di verifica (registro auditabile)
+        $wr->verification_code = WithdrawalRequest::generateVerificationCode((int) $wr->id);
+        $wr->update();
+
         $this->addOrderMessage($order, $declaration);
         $this->sendEmails($order, $wr, $items);
 
-        Tools::redirect($this->context->link->getModuleLink('euwithdrawal', 'withdrawal', ['action' => 'success']));
+        Tools::redirect($this->context->link->getModuleLink('euwithdrawal', 'withdrawal', [
+            'action' => 'success',
+            'code' => $wr->verification_code,
+        ]));
     }
 
     /* ------------------------------------------------------------------ *
@@ -212,40 +264,39 @@ class EuWithdrawalWithdrawalModuleFrontController extends ModuleFrontController
         $this->setTemplate('module:euwithdrawal/views/templates/front/review.tpl');
     }
 
-    /** Parse euw_type + items from the request into [type, items[]]. */
+    /** Parse euw_type + items into [type, items[]], excluding exempt products (Art. 16/59). */
     protected function getSelectedItems(Order $order)
     {
         $type = Tools::getValue('euw_type') === 'partial' ? 'partial' : 'full';
-        $products = $order->getProducts();
+        $selected = array_map('strval', (array) Tools::getValue('items'));
         $items = [];
 
-        if ($type === 'partial') {
-            $selected = array_map('strval', (array) Tools::getValue('items'));
-            foreach ($products as $p) {
-                $idod = (int) $p['id_order_detail'];
-                if (in_array((string) $idod, $selected, true)) {
-                    $qty = (int) Tools::getValue('qty_' . $idod, $p['product_quantity']);
-                    $qty = max(1, min($qty, (int) $p['product_quantity']));
-                    $items[] = [
-                        'id_order_detail' => $idod,
-                        'product_name' => $p['product_name'],
-                        'product_reference' => $p['product_reference'],
-                        'quantity' => $qty,
-                    ];
+        foreach ($order->getProducts() as $p) {
+            if ($this->module->isProductExempt((int) $p['product_id'])) {
+                continue; // i beni esenti non sono recedibili
+            }
+            $idod = (int) $p['id_order_detail'];
+
+            if ($type === 'partial') {
+                if (!in_array((string) $idod, $selected, true)) {
+                    continue;
                 }
+                $qty = (int) Tools::getValue('qty_' . $idod, $p['product_quantity']);
+                $qty = max(1, min($qty, (int) $p['product_quantity']));
+            } else {
+                $qty = (int) $p['product_quantity'];
             }
-            if (!$items) {
-                $this->fail($this->module->l('Seleziona almeno un prodotto per il recesso parziale.', 'withdrawal'));
-            }
-        } else {
-            foreach ($products as $p) {
-                $items[] = [
-                    'id_order_detail' => (int) $p['id_order_detail'],
-                    'product_name' => $p['product_name'],
-                    'product_reference' => $p['product_reference'],
-                    'quantity' => (int) $p['product_quantity'],
-                ];
-            }
+
+            $items[] = [
+                'id_order_detail' => $idod,
+                'product_name' => $p['product_name'],
+                'product_reference' => $p['product_reference'],
+                'quantity' => $qty,
+            ];
+        }
+
+        if (!$items) {
+            $this->fail($this->module->l('Nessun prodotto idoneo al recesso selezionato.', 'withdrawal'));
         }
 
         return [$type, $items];
@@ -286,16 +337,26 @@ class EuWithdrawalWithdrawalModuleFrontController extends ModuleFrontController
 
     protected function assignOrderProducts(Order $order)
     {
-        $rows = [];
+        $eligible = [];
+        $exempt = [];
         foreach ($order->getProducts() as $p) {
-            $rows[] = [
+            $row = [
                 'id_order_detail' => (int) $p['id_order_detail'],
                 'name' => $p['product_name'],
                 'reference' => $p['product_reference'],
                 'quantity' => (int) $p['product_quantity'],
             ];
+            if ($this->module->isProductExempt((int) $p['product_id'])) {
+                $exempt[] = $row;
+            } else {
+                $eligible[] = $row;
+            }
         }
-        $this->context->smarty->assign('euw_products', $rows);
+        $this->context->smarty->assign([
+            'euw_products' => $eligible,
+            'euw_exempt_products' => $exempt,
+            'euw_exempt_text' => $exempt ? $this->module->getExemptionText() : '',
+        ]);
     }
 
     protected function buildDeclaration(Order $order, $firstname, $lastname, array $items, $type)
@@ -355,6 +416,7 @@ class EuWithdrawalWithdrawalModuleFrontController extends ModuleFrontController
             '{type}' => $wr->type,
             '{items}' => nl2br(Tools::htmlentitiesUTF8($itemsText)),
             '{declaration}' => nl2br(Tools::htmlentitiesUTF8($wr->declaration)),
+            '{verification_code}' => $wr->verification_code,
             '{shop_name}' => Configuration::get('PS_SHOP_NAME'),
         ];
 

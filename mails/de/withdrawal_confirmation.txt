@@ -14,5 +14,7 @@ Widerrufserklärung:
 
 Die Rückerstattung erfolgt innerhalb von 14 Tagen nach der Widerrufserklärung gemäß der Richtlinie (EU) 2023/2673 (Art. 11a der Verbraucherrechte-Richtlinie).
 
+Bestätigungscode der Quittung: {verification_code}
+
 Vielen Dank,
 {shop_name}

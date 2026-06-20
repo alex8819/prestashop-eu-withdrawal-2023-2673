@@ -14,5 +14,7 @@ Déclaration de rétractation:
 
 Le remboursement sera effectué dans un délai de 14 jours suivant la notification, conformément à la Directive (UE) 2023/2673 (Art. 11a de la directive sur les droits des consommateurs).
 
+Code de vérification du reçu: {verification_code}
+
 Merci,
 {shop_name}
