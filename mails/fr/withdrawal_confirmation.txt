@@ -1,0 +1,18 @@
+Cher/Chère {firstname} {lastname},
+
+nous avons reçu et enregistré votre demande de rétractation. Cet e-mail constitue un accusé de réception sur un support durable.
+
+Commande: {order_reference} du {order_date}
+Date de la demande: {request_date}
+Type de rétractation: {type}
+
+Biens concernés par la rétractation:
+{items}
+
+Déclaration de rétractation:
+{declaration}
+
+Le remboursement sera effectué dans un délai de 14 jours suivant la notification, conformément à la Directive (UE) 2023/2673 (Art. 11a de la directive sur les droits des consommateurs).
+
+Merci,
+{shop_name}

@@ -1,0 +1,18 @@
+Sehr geehrte(r) {firstname} {lastname},
+
+wir haben Ihren Widerruf erhalten und erfasst. Diese E-Mail gilt als Bestätigung auf einem dauerhaften Datenträger.
+
+Bestellung: {order_reference} vom {order_date}
+Datum der Anfrage: {request_date}
+Art des Widerrufs: {type}
+
+Vom Widerruf betroffene Waren:
+{items}
+
+Widerrufserklärung:
+{declaration}
+
+Die Rückerstattung erfolgt innerhalb von 14 Tagen nach der Widerrufserklärung gemäß der Richtlinie (EU) 2023/2673 (Art. 11a der Verbraucherrechte-Richtlinie).
+
+Vielen Dank,
+{shop_name}

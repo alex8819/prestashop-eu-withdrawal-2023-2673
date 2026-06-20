@@ -1,0 +1,12 @@
+Se ha recibido una nueva solicitud de desistimiento del cliente:
+
+Cliente: {firstname} {lastname}
+Pedido: {order_reference} del {order_date}
+Fecha de la solicitud: {request_date}
+Tipo de desistimiento: {type}
+
+Bienes objeto del desistimiento:
+{items}
+
+Declaración de desistimiento:
+{declaration}

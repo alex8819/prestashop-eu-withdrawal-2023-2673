@@ -1,0 +1,18 @@
+Gentile {firstname} {lastname},
+
+abbiamo ricevuto e registrato la tua richiesta di recesso. Questa email costituisce ricevuta su supporto durevole.
+
+Ordine: {order_reference} del {order_date}
+Data della richiesta: {request_date}
+Tipo di recesso: {type}
+
+Beni oggetto di recesso:
+{items}
+
+Dichiarazione di recesso:
+{declaration}
+
+Il rimborso sarà effettuato entro 14 giorni dalla comunicazione del recesso, ai sensi della Direttiva UE 2023/2673 (Art. 54-bis Codice del Consumo).
+
+Grazie,
+{shop_name}

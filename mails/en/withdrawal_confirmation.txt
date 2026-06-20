@@ -1,0 +1,18 @@
+Dear {firstname} {lastname},
+
+we have received and recorded your withdrawal request. This email serves as a receipt on a durable medium.
+
+Order: {order_reference} of {order_date}
+Request date: {request_date}
+Withdrawal type: {type}
+
+Goods covered by the withdrawal:
+{items}
+
+Withdrawal declaration:
+{declaration}
+
+The refund will be issued within 14 days of the withdrawal notice, pursuant to Directive (EU) 2023/2673 (Art. 11a Consumer Rights Directive).
+
+Thank you,
+{shop_name}

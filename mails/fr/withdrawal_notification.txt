@@ -1,0 +1,12 @@
+Une nouvelle demande de rétractation a été reçue du client :
+
+Client: {firstname} {lastname}
+Commande: {order_reference} du {order_date}
+Date de la demande: {request_date}
+Type de rétractation: {type}
+
+Biens concernés par la rétractation:
+{items}
+
+Déclaration de rétractation:
+{declaration}

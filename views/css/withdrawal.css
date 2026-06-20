@@ -1,0 +1,64 @@
+/* EU Withdrawal Button — front styles | GPL-3.0-or-later */
+
+.euw-order-block {
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+}
+.euw-order-block .euw-title {
+  margin-top: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.euw-order-block .euw-deadline {
+  margin-bottom: 12px;
+}
+.euw-btn {
+  font-weight: 600;
+}
+
+.euw-account-link .material-icons {
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.euw-wrap {
+  max-width: 760px;
+  margin: 24px auto;
+  padding: 0 12px;
+}
+.euw-form .euw-radio {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+.euw-items {
+  border: 1px solid #ececec;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 8px 0 16px;
+  background: #fafafa;
+}
+.euw-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid #eee;
+}
+.euw-item:last-child { border-bottom: 0; }
+.euw-item-label { margin: 0; flex: 1; }
+.euw-qty { width: 80px; }
+.euw-ack {
+  margin: 16px 0;
+  padding: 12px;
+  background: #fff8e6;
+  border: 1px solid #ffe2a8;
+  border-radius: 8px;
+}
+.euw-submit { font-weight: 600; }
+
+.euw-success-icon {
+  font-size: 56px;
+  color: #2ecc71;
+}

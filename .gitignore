@@ -1,0 +1,14 @@
+# PrestaShop auto-generated module cache
+config.xml
+config_*.xml
+
+# Build artifacts
+*.zip
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/

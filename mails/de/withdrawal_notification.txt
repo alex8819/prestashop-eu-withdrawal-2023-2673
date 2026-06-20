@@ -1,0 +1,12 @@
+Eine neue Widerrufsanfrage ist vom Kunden eingegangen:
+
+Kunde: {firstname} {lastname}
+Bestellung: {order_reference} vom {order_date}
+Datum der Anfrage: {request_date}
+Art des Widerrufs: {type}
+
+Vom Widerruf betroffene Waren:
+{items}
+
+Widerrufserklärung:
+{declaration}

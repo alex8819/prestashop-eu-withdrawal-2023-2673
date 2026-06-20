@@ -1,0 +1,12 @@
+È stata ricevuta una nuova richiesta di recesso dal cliente:
+
+Cliente: {firstname} {lastname}
+Ordine: {order_reference} del {order_date}
+Data della richiesta: {request_date}
+Tipo di recesso: {type}
+
+Beni oggetto di recesso:
+{items}
+
+Dichiarazione di recesso:
+{declaration}

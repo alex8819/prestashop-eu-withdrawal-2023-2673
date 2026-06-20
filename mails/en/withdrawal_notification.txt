@@ -1,0 +1,12 @@
+A new withdrawal request has been received from the customer:
+
+Customer: {firstname} {lastname}
+Order: {order_reference} of {order_date}
+Request date: {request_date}
+Withdrawal type: {type}
+
+Goods covered by the withdrawal:
+{items}
+
+Withdrawal declaration:
+{declaration}

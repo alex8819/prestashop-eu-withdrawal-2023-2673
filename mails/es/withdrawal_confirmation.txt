@@ -1,0 +1,18 @@
+Estimado/a {firstname} {lastname},
+
+hemos recibido y registrado su solicitud de desistimiento. Este correo constituye un justificante en soporte duradero.
+
+Pedido: {order_reference} del {order_date}
+Fecha de la solicitud: {request_date}
+Tipo de desistimiento: {type}
+
+Bienes objeto del desistimiento:
+{items}
+
+Declaración de desistimiento:
+{declaration}
+
+El reembolso se realizará en un plazo de 14 días desde la comunicación del desistimiento, de conformidad con la Directiva (UE) 2023/2673 (Art. 11a de la Directiva sobre derechos de los consumidores).
+
+Gracias,
+{shop_name}
